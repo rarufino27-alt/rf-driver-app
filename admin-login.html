@@ -8,7 +8,6 @@
 <link rel="stylesheet" href="./theme/theme.css">
 
 <style>
-/* ===== PALETA 5 ESTRELAS ===== */
 :root{
   --wine-dark:#2B0F14;
   --wine:#4A1A22;
@@ -18,16 +17,9 @@
   --text:#333;
 }
 
-/* ===== LAYOUT ===== */
 body{
   min-height:100vh;
-  background:
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #f4f1f2 60%,
-      #efe9ec 100%
-    );
+  background:linear-gradient(180deg,#ffffff 0%,#f4f1f2 60%,#efe9ec 100%);
   font-family:Inter, Arial, sans-serif;
   color:var(--text);
 }
@@ -52,17 +44,11 @@ body{
   gap:18px;
 }
 
-/* ===== HERO ===== */
 .hero{
   text-align:center;
   padding:26px 18px;
   border-radius:22px;
-  background:
-    linear-gradient(
-      135deg,
-      var(--wine-dark),
-      var(--wine)
-    );
+  background:linear-gradient(135deg,var(--wine-dark),var(--wine));
   box-shadow:0 10px 26px rgba(0,0,0,.18);
   color:#fff;
 }
@@ -78,7 +64,6 @@ body{
   opacity:.9;
 }
 
-/* ===== INPUT ===== */
 input{
   width:100%;
   padding:14px;
@@ -87,7 +72,6 @@ input{
   font-size:1rem;
 }
 
-/* ===== BOTÃO ===== */
 button{
   padding:16px;
   border-radius:18px;
@@ -99,11 +83,8 @@ button{
   color:#000;
 }
 
-button:active{
-  transform:scale(.98);
-}
+button:active{ transform:scale(.98); }
 
-/* ===== ERRO ===== */
 .error{
   color:#c62828;
   font-size:.8rem;
@@ -139,35 +120,23 @@ button:active{
   </div>
 </div>
 
-<!-- SUPABASE -->
+<!-- ORDEM CORRETA -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-/* ================= CONFIG FIXA ================= */
-
-const supabaseClient = supabase.createClient(
-  "https://msnqiiwcityikslikbow.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbnFpaXdjaXR5aWtzbGlrYm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDM5OTgsImV4cCI6MjA4MzI3OTk5OH0.0KyaSuL5At4_Cfa4TOM7kvvkVYv-gmR2sb7vX6VHkaU"
-);
-
-const GRUPO_ID = "155c396c-0dec-4db8-ad61-cb680b4f00d7";
-</script>
+<script src="./core/supabase.js"></script>
 
 <script>
 /* ================= AUTO REDIRECT ================= */
-
-const usuarioLogado = JSON.parse(localStorage.getItem("usuarioRF"));
+const usuarioLogado = getUsuarioLogado();
 if(usuarioLogado && usuarioLogado.tipo === "admin"){
   window.location.href = "dashboard-admin.html";
 }
 
 /* ================= ELEMENTOS ================= */
-
 const cpfInput = document.getElementById("cpf");
 const btn = document.getElementById("btnEntrar");
 const erro = document.getElementById("erro");
 
 /* ================= MÁSCARA CPF ================= */
-
 cpfInput.addEventListener("input", () => {
   let v = cpfInput.value.replace(/\D/g,"").slice(0,11);
   v = v.replace(/(\d{3})(\d)/,"$1.$2");
@@ -177,13 +146,7 @@ cpfInput.addEventListener("input", () => {
 });
 
 /* ================= LOGIN ================= */
-
-btn.addEventListener("click", loginAdmin);
-cpfInput.addEventListener("keypress", e=>{
-  if(e.key === "Enter") loginAdmin();
-});
-
-async function loginAdmin(){
+btn.onclick = async () => {
   erro.style.display = "none";
 
   const cpf = cpfInput.value.replace(/\D/g,"");
@@ -200,7 +163,7 @@ async function loginAdmin(){
     .eq("cpf", cpf)
     .eq("tipo", "admin")
     .eq("ativo", true)
-    .eq("grupo_id", GRUPO_ID)
+    .eq("grupo_id", getGrupoId())
     .single();
 
   if(error || !data){
@@ -208,17 +171,17 @@ async function loginAdmin(){
     return;
   }
 
-  localStorage.setItem("usuarioRF", JSON.stringify({
+  setUsuarioLogado({
     id: data.id,
     tipo: data.tipo,
     nome: data.nome,
     cpf: data.cpf,
     grupo_id: data.grupo_id,
     ativo: true
-  }));
+  });
 
   window.location.href = "dashboard-admin.html";
-}
+};
 </script>
 
 </body>
