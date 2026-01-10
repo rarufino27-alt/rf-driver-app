@@ -13,7 +13,6 @@
   --wine:#4A1A22;
   --gold:#C9A24D;
   --gold-soft:#E6C97A;
-  --bg:#f4f1f2;
   --text:#2a2a2a;
 }
 
@@ -204,9 +203,11 @@ input,select{
 </div>
 </div>
 
-<script src="core/global.js"></script>
-<script src="core/taxas.js"></script>
-<script src="core/dinamico.js"></script>
+<!-- SCRIPTS OBRIGATÓRIOS -->
+<script src="./core/supabase.js"></script>
+<script src="./core/global.js"></script>
+<script src="./core/taxas.js"></script>
+<script src="./core/dinamico.js"></script>
 
 <script>
 /* ===== PROTEÇÃO ===== */
@@ -218,11 +219,11 @@ if(!usuario || !origem || !destino){
   window.location.href = "index.html";
 }
 
-/* ===== DADOS BASE ===== */
+/* ===== DADOS ===== */
 document.getElementById("origemTxt").innerText = origem;
 document.getElementById("destinoTxt").innerText = destino;
 
-const valorBase = Number(App.get("valorBase")||0);
+const valorBase = Number(App.get("valorBase") || 0);
 
 /* ===== ELEMENTOS ===== */
 const tipoViagem = document.getElementById("tipoViagem");
@@ -238,13 +239,13 @@ const assinatura = document.getElementById("assinatura");
 const btnWhats = document.getElementById("btnWhats");
 
 /* ===== ASSINATURA ===== */
-if(usuario.tipo==="motorista"){
-  assinatura.innerHTML=`<strong>MOTORISTA</strong><br>${usuario.nome}<br>Veículo: ${usuario.modelo}<br>Placa: ${usuario.placa}`;
-}else if(usuario.tipo==="admin"){
-  assinatura.innerHTML=`<strong>ADMINISTRADOR</strong><br>${usuario.nome}`;
+if(usuario.tipo === "motorista"){
+  assinatura.innerHTML = `<strong>MOTORISTA</strong><br>${usuario.nome}<br>Veículo: ${usuario.modelo}<br>Placa: ${usuario.placa}`;
+}else if(usuario.tipo === "admin"){
+  assinatura.innerHTML = `<strong>ADMINISTRADOR</strong><br>${usuario.nome}`;
 }else{
-  assinatura.style.display="none";
-  btnWhats.style.display="none";
+  assinatura.style.display = "none";
+  btnWhats.style.display = "none";
 }
 
 /* ===== CÁLCULO ===== */
@@ -252,11 +253,11 @@ function calcular(){
   let total = valorBase;
   let detalhes = [`Base: R$ ${valorBase.toFixed(2)}`];
 
-  if(tipoViagem.value!=="ida"){
-    const v = tipoViagem.value==="bate_volta"?valorBase*0.8:
-              tipoViagem.value==="ida_volta"?valorBase:
+  if(tipoViagem.value !== "ida"){
+    const v = tipoViagem.value === "bate_volta" ? valorBase*0.8 :
+              tipoViagem.value === "ida_volta" ? valorBase :
               valorBase*1.2;
-    total+=v;
+    total += v;
     detalhes.push(`Tipo de viagem: +R$ ${v.toFixed(2)}`);
   }
 
@@ -269,7 +270,7 @@ function calcular(){
 
   const minutos = Number(tempoEsperaInput.value||0);
   if(minutos>=5){
-    const espera = 3+(minutos-5)*0.6;
+    const espera = 3 + (minutos-5)*0.6;
     total+=espera;
     detalhes.push(`Espera: +R$ ${espera.toFixed(2)}`);
   }
@@ -280,13 +281,13 @@ function calcular(){
   detalhamento.innerHTML = detalhes.map(d=>`<div>${d}</div>`).join("");
   totalEl.innerText = `R$ ${total.toFixed(2)}`;
   App.set("total", total);
-  window.__detalhesWhats = detalhes;
+  window.__whatsDetalhes = detalhes;
 }
 
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("change",calcular));
 calcular();
 
-/* ===== WHATS ===== */
+/* ===== WHATSAPP ===== */
 btnWhats.onclick = ()=>{
   const total = App.get("total");
   const assinaturaTxt =
@@ -300,7 +301,7 @@ btnWhats.onclick = ()=>{
 Origem: ${origem}
 Destino: ${destino}
 
-${window.__detalhesWhats.join("\n")}
+${window.__whatsDetalhes.join("\n")}
 
 *Total:* R$ ${total.toFixed(2)}
 
