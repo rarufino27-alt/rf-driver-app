@@ -8,7 +8,6 @@
 <link rel="stylesheet" href="./theme/theme.css">
 
 <style>
-/* ===== PALETA 5 ESTRELAS ===== */
 :root{
   --wine-dark:#2B0F14;
   --wine:#4A1A22;
@@ -18,16 +17,9 @@
   --text:#333;
 }
 
-/* ===== LAYOUT ===== */
 body{
   min-height:100vh;
-  background:
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #f4f1f2 60%,
-      #efe9ec 100%
-    );
+  background:linear-gradient(180deg,#ffffff 0%,#f4f1f2 60%,#efe9ec 100%);
   font-family:Inter, Arial, sans-serif;
   color:var(--text);
 }
@@ -52,17 +44,11 @@ body{
   gap:18px;
 }
 
-/* ===== HERO ===== */
 .hero{
   text-align:center;
   padding:28px 20px;
   border-radius:24px;
-  background:
-    linear-gradient(
-      135deg,
-      var(--wine-dark),
-      var(--wine)
-    );
+  background:linear-gradient(135deg,var(--wine-dark),var(--wine));
   box-shadow:0 12px 30px rgba(0,0,0,.2);
   color:#fff;
 }
@@ -80,7 +66,6 @@ body{
   margin-top:6px;
 }
 
-/* ===== BOTÕES ===== */
 button, a.btn{
   width:100%;
   padding:16px;
@@ -93,7 +78,6 @@ button, a.btn{
   text-decoration:none;
 }
 
-/* Primários */
 .btn-admin{
   background:#111;
   color:#fff;
@@ -104,14 +88,12 @@ button, a.btn{
   color:#000;
 }
 
-/* Secundários */
 .btn-outline{
   background:#fff;
   border:1px solid #ccc;
   color:#000;
 }
 
-/* Footer */
 .footer{
   text-align:center;
   font-size:.75rem;
@@ -126,13 +108,11 @@ button, a.btn{
 <div class="page">
   <div class="box">
 
-    <!-- HERO -->
     <div class="hero">
       <h1>ADMINISTRADOR</h1>
       <span id="nomeAdmin"></span>
     </div>
 
-    <!-- AÇÕES PRINCIPAIS -->
     <button class="btn-admin" onclick="abrirPainel()">
       🛠️ Painel Administrativo
     </button>
@@ -141,7 +121,6 @@ button, a.btn{
       ▶ Iniciar cálculo de corrida
     </button>
 
-    <!-- AÇÕES DE APOIO -->
     <button class="btn-outline" onclick="regrasMotorista()">
       📋 Regras do motorista
     </button>
@@ -165,15 +144,26 @@ button, a.btn{
   </div>
 </div>
 
+<!-- SUPABASE / HELPERS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core/supabase.js"></script>
+
 <script>
-/* ================= PROTEÇÃO DE SESSÃO ================= */
+/* ================= PROTEÇÃO DE SESSÃO (PADRÃO FINAL) ================= */
 
-const usuario = JSON.parse(localStorage.getItem("usuarioRF"));
+const usuario = getUsuarioLogado();
 
-if(!usuario || usuario.tipo !== "admin"){
-  localStorage.clear();
+if(
+  !usuario ||
+  usuario.tipo !== "admin" ||
+  usuario.ativo !== true ||
+  usuario.grupo_id !== getGrupoId()
+){
+  logoutUsuario();
   window.location.href = "index.html";
 }
+
+/* ================= INIT ================= */
 
 document.getElementById("nomeAdmin").innerText = usuario.nome;
 
@@ -199,7 +189,7 @@ function regrasPassageiro(){
 }
 
 function sair(){
-  localStorage.clear();
+  logoutUsuario();
   window.location.href = "index.html";
 }
 </script>
