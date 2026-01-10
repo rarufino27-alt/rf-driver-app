@@ -8,7 +8,6 @@
 <link rel="stylesheet" href="./theme/theme.css">
 
 <style>
-/* ===== PALETA 5 ESTRELAS ===== */
 :root{
   --wine-dark:#2B0F14;
   --wine:#4A1A22;
@@ -18,15 +17,8 @@
   --text:#333;
 }
 
-/* ===== LAYOUT ===== */
 body{
-  background:
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #f4f1f2 60%,
-      #efe9ec 100%
-    );
+  background:linear-gradient(180deg,#ffffff 0%,#f4f1f2 60%,#efe9ec 100%);
   font-family:Inter, Arial, sans-serif;
   color:var(--text);
 }
@@ -45,17 +37,11 @@ body{
   box-shadow:0 16px 40px rgba(0,0,0,.14);
 }
 
-/* ===== HEADER ===== */
 .header{
   text-align:center;
   padding:26px 20px;
   border-radius:24px;
-  background:
-    linear-gradient(
-      135deg,
-      var(--wine-dark),
-      var(--wine)
-    );
+  background:linear-gradient(135deg,var(--wine-dark),var(--wine));
   color:#fff;
   box-shadow:0 12px 30px rgba(0,0,0,.2);
   margin-bottom:24px;
@@ -72,7 +58,6 @@ body{
   opacity:.9;
 }
 
-/* ===== LISTA ===== */
 .user{
   display:flex;
   justify-content:space-between;
@@ -93,7 +78,6 @@ body{
   display:block;
 }
 
-/* BADGE */
 .badge{
   display:inline-block;
   margin-top:6px;
@@ -113,7 +97,6 @@ body{
   color:#a71d2a;
 }
 
-/* ===== BOTÕES ===== */
 .btn{
   padding:10px 16px;
   border-radius:14px;
@@ -150,13 +133,11 @@ body{
 <div class="page">
   <div class="box">
 
-    <!-- HEADER -->
     <div class="header">
       <h1>PAINEL ADMINISTRATIVO</h1>
       <span>Grupo 5 Estrelas</span>
     </div>
 
-    <!-- LISTA -->
     <div id="lista"></div>
 
     <button class="back" onclick="voltar()">
@@ -168,25 +149,30 @@ body{
 
 <!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core/supabase.js"></script>
+
 <script>
-const supabaseClient = supabase.createClient(
-  "https://msnqiiwcityikslikbow.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbnFpaXdjaXR5aWtzbGlrYm93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDM5OTgsImV4cCI6MjA4MzI3OTk5OH0.0KyaSuL5At4_Cfa4TOM7kvvkVYv-gmR2sb7vX6VHkaU"
-);
+/* ================= PROTEÇÃO DE SESSÃO ================= */
 
-const GRUPO_ID = "f5b2eec4-f957-4648-8e4e-f5642159dd8c";
-const usuario = JSON.parse(localStorage.getItem("usuarioRF"));
+const usuario = getUsuarioLogado();
 
-if(!usuario || usuario.tipo !== "admin"){
-  localStorage.clear();
+if(
+  !usuario ||
+  usuario.tipo !== "admin" ||
+  usuario.ativo !== true ||
+  usuario.grupo_id !== getGrupoId()
+){
+  logoutUsuario();
   window.location.href = "index.html";
 }
+
+/* ================= CARREGAR USUÁRIOS ================= */
 
 async function carregar(){
   const { data, error } = await supabaseClient
     .from("usuarios")
     .select("*")
-    .eq("grupo_id", GRUPO_ID)
+    .eq("grupo_id", getGrupoId())
     .order("criado_em", { ascending: false });
 
   if(error){
@@ -217,7 +203,7 @@ async function carregar(){
       </div>
 
       <button class="btn ${u.ativo ? "block" : "unblock"}"
-        onclick="toggle('${u.id}', ${u.ativo})">
+        onclick="toggleStatus('${u.id}', ${u.ativo})">
         ${u.ativo ? "Bloquear" : "Ativar"}
       </button>
     `;
@@ -226,7 +212,7 @@ async function carregar(){
   });
 }
 
-async function toggle(id, ativo){
+async function toggleStatus(id, ativo){
   const { error } = await supabaseClient
     .from("usuarios")
     .update({ ativo: !ativo })
