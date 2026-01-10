@@ -34,7 +34,9 @@ body{
   gap:18px;
 }
 
-.logo{text-align:center}
+.logo{
+  text-align:center;
+}
 
 .logo h1{
   font-size:1.6rem;
@@ -103,15 +105,37 @@ button{
   </div>
 </div>
 
-<!-- ORDEM CORRETA (CRÍTICO) -->
+<!-- SUPABASE (ORDEM OBRIGATÓRIA) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./core/supabase.js"></script>
 
 <script>
+/* ================= HELPERS DE SEGURANÇA ================= */
+
+function getUsuarioSeguro(){
+  try{
+    return typeof getUsuarioLogado === "function"
+      ? getUsuarioLogado()
+      : JSON.parse(localStorage.getItem("usuarioRF"));
+  }catch(e){
+    return null;
+  }
+}
+
+function setUsuarioSeguro(data){
+  try{
+    if(typeof setUsuarioLogado === "function"){
+      setUsuarioLogado(data);
+    }else{
+      localStorage.setItem("usuarioRF", JSON.stringify(data));
+    }
+  }catch(e){}
+}
+
 /* ================= AUTO REDIRECT ================= */
 
-const usuarioAtual = getUsuarioLogado();
-if (usuarioAtual && usuarioAtual.tipo === "passageiro") {
+const usuarioAtual = getUsuarioSeguro();
+if(usuarioAtual && usuarioAtual.tipo === "passageiro"){
   window.location.href = "dashboard-passageiro.html";
 }
 
@@ -124,7 +148,7 @@ const btn = document.getElementById("btnEntrar");
 /* ================= MÁSCARA ================= */
 
 telefoneInput.addEventListener("input", () => {
-  telefoneInput.value = telefoneInput.value.replace(/\D/g, "").slice(0, 11);
+  telefoneInput.value = telefoneInput.value.replace(/\D/g,"").slice(0,11);
 });
 
 /* ================= LOGIN ================= */
@@ -134,7 +158,7 @@ btn.addEventListener("click", async () => {
 
   const telefone = telefoneInput.value;
 
-  if (telefone.length < 10) {
+  if(telefone.length < 10){
     erro.innerText = "Telefone inválido";
     erro.style.display = "block";
     return;
@@ -149,12 +173,12 @@ btn.addEventListener("click", async () => {
     .eq("grupo_id", getGrupoId())
     .single();
 
-  if (error || !data) {
+  if(error || !data){
     erro.style.display = "block";
     return;
   }
 
-  setUsuarioLogado(data);
+  setUsuarioSeguro(data);
   window.location.href = "dashboard-passageiro.html";
 });
 </script>
