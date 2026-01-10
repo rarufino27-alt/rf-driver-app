@@ -2,20 +2,41 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Destino – RF Driver</title>
+<title>Destino – Passageiro 5 Estrelas</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="./theme/theme.css">
 
 <style>
-body{
-  background:radial-gradient(circle at top,#fff,#f2f2f2);
-  color:#444;
+/* ===== PALETA 5 ESTRELAS ===== */
+:root{
+  --wine-dark:#2B0F14;
+  --wine:#4A1A22;
+  --gold:#C9A24D;
+  --gold-soft:#E6C97A;
+  --bg:#f4f1f2;
+  --text:#2a2a2a;
 }
 
+/* ===== ANIMAÇÃO ===== */
 @keyframes fadeUp{
   from{opacity:0;transform:translateY(16px)}
   to{opacity:1;transform:translateY(0)}
+}
+
+/* ===== BASE ===== */
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #f4f1f2 60%,
+      #efe9eb 100%
+    );
+  font-family:Inter, Arial, sans-serif;
+  color:var(--text);
 }
 
 .page{
@@ -30,56 +51,76 @@ body{
   max-width:420px;
   display:flex;
   flex-direction:column;
-  gap:20px;
+  gap:22px;
   animation:fadeUp .6s ease;
 }
 
+/* ===== HEADER ===== */
 .header{
   text-align:center;
-  padding:26px;
-  border-radius:24px;
-  background:linear-gradient(180deg,#fff,#f3f3f3);
-  border:1px solid rgba(212,175,55,.35);
-  box-shadow:0 10px 26px rgba(0,0,0,.08);
+  padding:30px 24px;
+  border-radius:26px;
+  background:
+    linear-gradient(
+      135deg,
+      var(--wine-dark),
+      var(--wine)
+    );
+  box-shadow:0 14px 36px rgba(0,0,0,.22);
+  color:#fff;
 }
 
 .header h1{
   font-size:1.4rem;
   letter-spacing:2px;
-  background:linear-gradient(180deg,#D4AF37,#E6C97A);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+}
+
+.header .stars{
+  margin:10px 0 6px;
+  color:var(--gold);
+  letter-spacing:4px;
+  font-size:.95rem;
 }
 
 .header p{
   font-size:.85rem;
-  color:#666;
+  opacity:.9;
 }
 
+/* ===== CARD ===== */
 .card-box{
   background:#fff;
-  border-radius:20px;
+  border-radius:22px;
   padding:18px;
-  box-shadow:0 8px 22px rgba(0,0,0,.08);
+  box-shadow:0 10px 26px rgba(0,0,0,.1);
 }
 
+/* ===== SELETOR ===== */
 .select-btn{
   padding:18px;
   border-radius:16px;
-  border:1px solid #ddd;
+  border:1px solid rgba(201,162,77,.45);
   background:#fff;
   color:#000;
   cursor:pointer;
+  font-weight:600;
 }
 
+/* ===== BOTÕES ===== */
 .primary{
-  background:linear-gradient(180deg,#E6C97A,#D4AF37);
+  background:linear-gradient(180deg,var(--gold-soft),var(--gold));
   border:none;
   padding:18px;
-  font-weight:700;
+  font-size:1.05rem;
+  font-weight:800;
   border-radius:18px;
-  box-shadow:0 8px 18px rgba(212,175,55,.35);
+  box-shadow:0 8px 18px rgba(201,162,77,.35);
   cursor:pointer;
+}
+
+.primary:disabled{
+  opacity:.5;
+  cursor:not-allowed;
 }
 
 .secondary{
@@ -90,6 +131,7 @@ body{
   cursor:pointer;
 }
 
+/* ===== MODAL ===== */
 .modal{
   position:fixed;
   inset:0;
@@ -113,29 +155,35 @@ body{
 <body>
 
 <div class="page">
-<div class="box">
+  <div class="box">
 
-  <div class="header">
-    <h1>DESTINO ou ORIGEM</h1>
-    <p>Selecione o destino da corrida</p>
-  </div>
-
-  <div class="card-box">
-    <div class="select-btn" id="destinoBtn">
-      Toque para escolher o destino
+    <!-- HEADER -->
+    <div class="header">
+      <h1>DESTINO</h1>
+      <div class="stars">★★★★★</div>
+      <p>Selecione o destino da corrida</p>
     </div>
+
+    <!-- DESTINO -->
+    <div class="card-box">
+      <div class="select-btn" id="destinoBtn">
+        Toque para escolher o destino
+      </div>
+    </div>
+
+    <!-- CONTINUAR -->
+    <button class="primary" id="btnContinuar" disabled>
+      Continuar
+    </button>
+
+    <!-- AÇÕES -->
+    <button class="secondary" id="btnVoltar">⬅ Voltar</button>
+    <button class="secondary" id="btnInicio">🏠 Início</button>
+
   </div>
-
-  <button class="primary" id="btnContinuar" disabled>
-    Continuar
-  </button>
-
-  <button class="secondary" id="btnVoltar">⬅ Voltar</button>
-  <button class="secondary" id="btnInicio">🏠 Início</button>
-
-</div>
 </div>
 
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <input
@@ -155,12 +203,10 @@ body{
 
 const usuario = JSON.parse(localStorage.getItem("usuarioRF"));
 
-// Não logado → index neutra
 if(!usuario){
   window.location.href = "index.html";
 }
 
-// Origem obrigatória
 const origem = App.get("origem");
 if(!origem){
   if(usuario.tipo === "motorista"){
@@ -170,7 +216,8 @@ if(!origem){
   }
 }
 
-// Botões
+/* ================= BOTÕES ================= */
+
 document.getElementById("btnVoltar").onclick = () => {
   App.go("origem.html");
 };
@@ -240,4 +287,3 @@ carregar();
 
 </body>
 </html>
-
