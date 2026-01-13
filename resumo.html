@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Resumo – Passageiro 5 Estrelas</title>
+<title>Resumo – 5 Estrelas</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="./theme/theme.css">
@@ -203,29 +203,33 @@ input,select{
 </div>
 </div>
 
-<!-- SCRIPTS OBRIGATÓRIOS -->
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./core/supabase.js"></script>
 <script src="./core/global.js"></script>
 <script src="./core/taxas.js"></script>
-<script src="./core/dinamico.js"></script>
 
 <script>
-/* ===== PROTEÇÃO ===== */
-const usuario = getUsuarioLogado();
-const origem = App.get("origem");
-const destino = App.get("destino");
+/* ================= PROTEÇÃO ================= */
+(async () => {
+  await App.requireAuth(["passageiro","motorista","admin"]);
+})();
 
-if(!usuario || !origem || !destino){
-  window.location.href = "index.html";
-}
+const origem = App.getState("origem");
+const destino = App.getState("destino");
+if(!origem || !destino) App.go("dashboard-passageiro.html");
 
-/* ===== DADOS ===== */
+/* ================= DADOS ================= */
 document.getElementById("origemTxt").innerText = origem;
 document.getElementById("destinoTxt").innerText = destino;
 
-const valorBase = Number(App.get("valorBase") || 0);
+const valorBase = Number(App.getState("valorBase") || 0);
 
-/* ===== ELEMENTOS ===== */
+/* ================= USUÁRIO ================= */
+const user = App.user;
+const role = App.role;
+
+/* ================= ELEMENTOS ================= */
 const tipoViagem = document.getElementById("tipoViagem");
 const desvioSimples = document.getElementById("desvioSimples");
 const voltaPraia = document.getElementById("voltaPraia");
@@ -238,74 +242,93 @@ const totalEl = document.getElementById("total");
 const assinatura = document.getElementById("assinatura");
 const btnWhats = document.getElementById("btnWhats");
 
-/* ===== ASSINATURA ===== */
-if(usuario.tipo === "motorista"){
-  assinatura.innerHTML = `<strong>MOTORISTA</strong><br>${usuario.nome}<br>Veículo: ${usuario.modelo}<br>Placa: ${usuario.placa}`;
-}else if(usuario.tipo === "admin"){
-  assinatura.innerHTML = `<strong>ADMINISTRADOR</strong><br>${usuario.nome}`;
+/* ================= CPF MASK ================= */
+function maskCPF(cpf){
+  if(!cpf) return "";
+  return cpf.substring(0,3) + "********";
+}
+
+/* ================= ASSINATURA ================= */
+if(role === "motorista"){
+  assinatura.innerHTML = `
+<strong>MOTORISTA</strong><br>
+${user.user_metadata?.nome || ""}<br>
+*VEÍCULO* ${user.user_metadata?.veiculo || ""}<br>
+*PLACA* ${user.user_metadata?.placa || ""}<br>
+*CPF* ${maskCPF(user.user_metadata?.cpf)}
+`;
+}else if(role === "admin"){
+  assinatura.innerHTML = `<strong>ADMINISTRADOR</strong><br>${user.user_metadata?.nome || ""}`;
 }else{
   assinatura.style.display = "none";
   btnWhats.style.display = "none";
 }
 
-/* ===== CÁLCULO ===== */
+/* ================= CÁLCULO ================= */
 function calcular(){
   let total = valorBase;
-  let detalhes = [`Base: R$ ${valorBase.toFixed(2)}`];
+  let detalhes = [];
+
+  detalhes.push(`🚖 Viagem base: R$ ${valorBase.toFixed(2)}`);
 
   if(tipoViagem.value !== "ida"){
-    const v = tipoViagem.value === "bate_volta" ? valorBase*0.8 :
-              tipoViagem.value === "ida_volta" ? valorBase :
-              valorBase*1.2;
-    total += v;
-    detalhes.push(`Tipo de viagem: +R$ ${v.toFixed(2)}`);
+    let extra = 0;
+    if(tipoViagem.value === "bate_volta") extra = valorBase*0.8;
+    if(tipoViagem.value === "ida_volta") extra = valorBase;
+    if(tipoViagem.value === "ida_volta_espera") extra = valorBase*1.2;
+    total += extra;
+    detalhes.push(`♻️ Tipo de viagem: +R$ ${extra.toFixed(2)}`);
   }
 
-  if(desvioSimples.checked){ total+=Taxas.desvioRotaSimples; detalhes.push(`Desvio: +R$ ${Taxas.desvioRotaSimples.toFixed(2)}`); }
-  if(voltaPraia.checked){ total+=Taxas.voltaPraia; detalhes.push(`Praia: +R$ ${Taxas.voltaPraia.toFixed(2)}`); }
-  if(taxaFeira.checked){ total+=Taxas.feira; detalhes.push(`Feira: +R$ ${Taxas.feira.toFixed(2)}`); }
+  if(desvioSimples.checked){ total+=Taxas.desvioRotaSimples; detalhes.push(`🛣️ Desvio simples: +R$ ${Taxas.desvioRotaSimples.toFixed(2)}`); }
+  if(voltaPraia.checked){ total+=Taxas.voltaPraia; detalhes.push(`🏖️ Volta da praia: +R$ ${Taxas.voltaPraia.toFixed(2)}`); }
+  if(taxaFeira.checked){ total+=Taxas.feira; detalhes.push(`🧺 Taxa de feira: +R$ ${Taxas.feira.toFixed(2)}`); }
 
   const animal = Number(animalSel.value||0);
-  if(animal){ total+=animal; detalhes.push(`Animal: +R$ ${animal.toFixed(2)}`); }
+  if(animal){ total+=animal; detalhes.push(`🐶 Animal: +R$ ${animal.toFixed(2)}`); }
 
   const minutos = Number(tempoEsperaInput.value||0);
   if(minutos>=5){
     const espera = 3 + (minutos-5)*0.6;
     total+=espera;
-    detalhes.push(`Espera: +R$ ${espera.toFixed(2)}`);
+    detalhes.push(`⏱️ Espera: +R$ ${espera.toFixed(2)}`);
   }
 
   const extra = Number(desvioExtraInput.value||0);
-  if(extra){ total+=extra; detalhes.push(`Extra: +R$ ${extra.toFixed(2)}`); }
+  if(extra){ total+=extra; detalhes.push(`➕ Extra: +R$ ${extra.toFixed(2)}`); }
 
   detalhamento.innerHTML = detalhes.map(d=>`<div>${d}</div>`).join("");
   totalEl.innerText = `R$ ${total.toFixed(2)}`;
-  App.set("total", total);
+  App.setState("total", total);
   window.__whatsDetalhes = detalhes;
 }
 
 document.querySelectorAll("input,select").forEach(e=>e.addEventListener("change",calcular));
 calcular();
 
-/* ===== WHATSAPP ===== */
+/* ================= WHATSAPP ================= */
 btnWhats.onclick = ()=>{
-  const total = App.get("total");
+  const total = App.getState("total");
+
   const assinaturaTxt =
-    usuario.tipo==="motorista"
-      ? `*MOTORISTA* ${usuario.nome}\nVeículo: ${usuario.modelo}\nPlaca: ${usuario.placa}`
-      : `*ADMINISTRADOR* ${usuario.nome}`;
+role==="motorista"
+? `*MOTORISTA* ${user.user_metadata?.nome}\n*VEICULO* ${user.user_metadata?.veiculo}\n*PLACA* ${user.user_metadata?.placa}\n*CPF* ${maskCPF(user.user_metadata?.cpf)}`
+: `*ADMINISTRADOR* ${user.user_metadata?.nome}`;
 
   const msg =
-`*🚖 5 Estrelas – Resumo da Corrida*
+`💫 *5 Estrelas– RECIBO de viagem*
 
-Origem: ${origem}
-Destino: ${destino}
+📌 *Origem*: ${origem}
+🏁 *Destino*: ${destino}
 
+*Detalhamento*
 ${window.__whatsDetalhes.join("\n")}
 
-*Total:* R$ ${total.toFixed(2)}
+💰 *Total*: R$ ${total.toFixed(2)}
 
-${assinaturaTxt}`;
+${assinaturaTxt}
+
+Conforto, segurança e transparência.`;
 
   window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 };
