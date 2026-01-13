@@ -136,9 +136,7 @@ button{
 
       <button id="btnEntrar">Entrar</button>
 
-      <div class="error" id="erro">
-        Passageiro não encontrado ou bloqueado
-      </div>
+      <div class="error" id="erro"></div>
     </div>
 
     <div class="footer">
@@ -148,54 +146,60 @@ button{
   </div>
 </div>
 
-<!-- ORDEM OBRIGATÓRIA -->
+<!-- ================= ORDEM OBRIGATÓRIA ================= -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./core/supabase.js"></script>
+<script src="./core/global.js"></script>
 
 <script>
-/* ================= AUTO REDIRECT ================= */
-const usuario = getUsuarioLogado();
-if(usuario && usuario.tipo === "passageiro"){
-  window.location.href = "dashboard-passageiro.html";
-}
-
 /* ================= ELEMENTOS ================= */
 const telefoneInput = document.getElementById("telefone");
 const erro = document.getElementById("erro");
 const btn = document.getElementById("btnEntrar");
 
 /* ================= MÁSCARA ================= */
-telefoneInput.addEventListener("input", ()=>{
-  telefoneInput.value = telefoneInput.value.replace(/\D/g,"").slice(0,11);
+telefoneInput.addEventListener("input", () => {
+  telefoneInput.value = telefoneInput.value.replace(/\D/g, "").slice(0, 11);
 });
 
+/* ================= AUTO REDIRECT ================= */
+(async () => {
+  await App.requireAuth(["passageiro"]);
+})();
+
 /* ================= LOGIN ================= */
-btn.onclick = async ()=>{
+btn.onclick = async () => {
   erro.style.display = "none";
 
   const telefone = telefoneInput.value;
-  if(telefone.length < 10){
+  if (telefone.length < 10) {
     erro.innerText = "Telefone inválido";
     erro.style.display = "block";
     return;
   }
 
-  const { data, error } = await supabaseClient
-    .from("usuarios")
-    .select("*")
-    .eq("telefone", telefone)
-    .eq("tipo", "passageiro")
-    .eq("ativo", true)
-    .eq("grupo_id", getGrupoId())
-    .single();
+  const { data, error } = await SUPABASE.client.auth.signInWithPassword({
+    phone: "+55" + telefone,
+    password: telefone // senha provisória
+  });
 
-  if(error || !data){
+  if (error || !data?.user) {
+    erro.innerText = "Passageiro não encontrado ou bloqueado";
     erro.style.display = "block";
     return;
   }
 
-  setUsuarioLogado(data);
-  window.location.href = "dashboard-passageiro.html";
+  const role = data.user.user_metadata?.role;
+  const grupo = data.user.user_metadata?.grupo_id;
+
+  if (role !== "passageiro" || grupo !== SUPABASE.GRUPO_ID) {
+    erro.innerText = "Usuário sem permissão";
+    erro.style.display = "block";
+    await SUPABASE.client.auth.signOut();
+    return;
+  }
+
+  App.loginSuccess(data.user);
 };
 </script>
 
