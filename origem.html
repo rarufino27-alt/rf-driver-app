@@ -8,7 +8,6 @@
 <link rel="stylesheet" href="./theme/theme.css">
 
 <style>
-/* ===== PALETA 5 ESTRELAS ===== */
 :root{
   --wine-dark:#2B0F14;
   --wine:#4A1A22;
@@ -18,22 +17,19 @@
   --text:#2a2a2a;
 }
 
-/* ===== ANIMAÇÃO ===== */
 @keyframes fadeUp{
   from{opacity:0;transform:translateY(16px)}
   to{opacity:1;transform:translateY(0)}
 }
 
-/* ===== BASE ===== */
 body{
   margin:0;
-  background:
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #f4f1f2 55%,
-      #efe9eb 100%
-    );
+  background:linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #f4f1f2 55%,
+    #efe9eb 100%
+  );
   font-family:Inter, Arial, sans-serif;
   color:var(--text);
 }
@@ -54,17 +50,11 @@ body{
   animation:fadeUp .6s ease;
 }
 
-/* ===== HERO ===== */
 .hero{
   text-align:center;
   padding:30px 24px;
   border-radius:26px;
-  background:
-    linear-gradient(
-      135deg,
-      var(--wine-dark),
-      var(--wine)
-    );
+  background:linear-gradient(135deg,var(--wine-dark),var(--wine));
   box-shadow:0 14px 36px rgba(0,0,0,.22);
   color:#fff;
 }
@@ -80,7 +70,6 @@ body{
   opacity:.9;
 }
 
-/* ===== CARD ===== */
 .card{
   background:#fff;
   border-radius:22px;
@@ -88,7 +77,6 @@ body{
   box-shadow:0 10px 26px rgba(0,0,0,.1);
 }
 
-/* ===== SELETOR ===== */
 .select-btn{
   padding:18px;
   border-radius:18px;
@@ -98,7 +86,6 @@ body{
   cursor:pointer;
 }
 
-/* ===== BOTÕES ===== */
 .btn-primary{
   padding:18px;
   border-radius:20px;
@@ -119,7 +106,6 @@ body{
   cursor:pointer;
 }
 
-/* ===== MODAL ===== */
 .modal{
   position:fixed;
   inset:0;
@@ -145,20 +131,17 @@ body{
 <div class="page">
   <div class="box">
 
-    <!-- HERO -->
     <div class="hero">
       <div class="hero-title">ESCOLHA A ORIGEM</div>
       <div class="hero-sub">Ponto de partida da sua viagem</div>
     </div>
 
-    <!-- CARD -->
     <div class="card">
       <div class="select-btn" id="origemBtn">
         Toque para escolher a origem
       </div>
     </div>
 
-    <!-- AÇÃO -->
     <button class="btn-primary" id="btnAvancar" disabled>
       Continuar
     </button>
@@ -182,75 +165,94 @@ body{
   </div>
 </div>
 
-<script src="core/global.js"></script>
-<script src="core/datamanager.js"></script>
+<!-- ================= ORDEM OBRIGATÓRIA ================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core/supabase.js"></script>
+<script src="./core/global.js"></script>
+<script src="./core/datamanager.js"></script>
 
 <script>
-/* ================= PROTEÇÃO ================= */
+/* ================= PROTEÇÃO DE SESSÃO ================= */
+(async () => {
+  await App.requireAuth(["passageiro"]);
+})();
 
-const usuario = JSON.parse(localStorage.getItem("usuarioRF"));
-
-if(!usuario){
-  window.location.href = "index.html";
-}
-
-document.getElementById("btnInicio").onclick = () => {
-  window.location.href =
-    usuario.tipo === "motorista"
-      ? "dashboard-motorista.html"
-      : "dashboard-passageiro.html";
-};
-
-/* ================= ORIGEM ================= */
-
+/* ================= ELEMENTOS ================= */
 const origemBtn = document.getElementById("origemBtn");
 const modal = document.getElementById("modal");
 const lista = document.getElementById("lista");
 const busca = document.getElementById("busca");
-const btn = document.getElementById("btnAvancar");
+const btnAvancar = document.getElementById("btnAvancar");
+const btnInicio = document.getElementById("btnInicio");
 
+/* ================= VOLTAR ================= */
+btnInicio.onclick = () => {
+  App.go("dashboard-passageiro.html");
+};
+
+/* ================= DADOS ================= */
 let origens = [];
 
+/* ================= MODAL ================= */
 origemBtn.onclick = () => {
   modal.style.display = "flex";
   busca.value = "";
-  render(origens);
+  renderLista(origens);
   setTimeout(() => busca.focus(), 100);
 };
 
 modal.onclick = e => {
-  if(e.target === modal) modal.style.display = "none";
+  if (e.target === modal) modal.style.display = "none";
 };
 
-async function carregar(){
+/* ================= CARREGAR ORIGENS ================= */
+async function carregar() {
   await DataManager.carregar();
   origens = DataManager.listarOrigens();
+
+  // RESTAURA SE JÁ EXISTIR
+  const origemSalva = App.getState("origem");
+  if (origemSalva) {
+    origemBtn.textContent = origemSalva;
+    btnAvancar.disabled = false;
+  }
 }
 
-function render(arr){
+/* ================= RENDER ================= */
+function renderLista(arr) {
   lista.innerHTML = "";
-  arr.forEach(o => {
-    const div = document.createElement("div");
-    div.textContent = o;
-    div.style.padding = "14px";
-    div.style.cursor = "pointer";
-    div.onclick = () => {
-      origemBtn.textContent = o;
-      App.set("origem", o);
+
+  arr.forEach(origem => {
+    const item = document.createElement("div");
+    item.textContent = origem;
+    item.style.padding = "14px";
+    item.style.cursor = "pointer";
+
+    item.onclick = () => {
+      origemBtn.textContent = origem;
+      App.setState("origem", origem);
       modal.style.display = "none";
-      btn.disabled = false;
+      btnAvancar.disabled = false;
     };
-    lista.appendChild(div);
+
+    lista.appendChild(item);
   });
 }
 
+/* ================= BUSCA ================= */
 busca.oninput = () => {
-  const t = busca.value.toLowerCase();
-  render(origens.filter(o => o.toLowerCase().includes(t)));
+  const termo = busca.value.toLowerCase();
+  renderLista(
+    origens.filter(o => o.toLowerCase().includes(termo))
+  );
 };
 
-btn.onclick = () => App.go("destino.html");
+/* ================= AVANÇAR ================= */
+btnAvancar.onclick = () => {
+  App.go("destino.html");
+};
 
+/* ================= INIT ================= */
 carregar();
 </script>
 
