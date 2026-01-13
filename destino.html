@@ -8,7 +8,6 @@
 <link rel="stylesheet" href="./theme/theme.css">
 
 <style>
-/* ===== PALETA 5 ESTRELAS ===== */
 :root{
   --wine-dark:#2B0F14;
   --wine:#4A1A22;
@@ -18,23 +17,20 @@
   --text:#2a2a2a;
 }
 
-/* ===== ANIMAÇÃO ===== */
 @keyframes fadeUp{
   from{opacity:0;transform:translateY(16px)}
   to{opacity:1;transform:translateY(0)}
 }
 
-/* ===== BASE ===== */
 body{
   margin:0;
   min-height:100vh;
-  background:
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #f4f1f2 60%,
-      #efe9eb 100%
-    );
+  background:linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #f4f1f2 60%,
+    #efe9eb 100%
+  );
   font-family:Inter, Arial, sans-serif;
   color:var(--text);
 }
@@ -55,17 +51,11 @@ body{
   animation:fadeUp .6s ease;
 }
 
-/* ===== HEADER ===== */
 .header{
   text-align:center;
   padding:30px 24px;
   border-radius:26px;
-  background:
-    linear-gradient(
-      135deg,
-      var(--wine-dark),
-      var(--wine)
-    );
+  background:linear-gradient(135deg,var(--wine-dark),var(--wine));
   box-shadow:0 14px 36px rgba(0,0,0,.22);
   color:#fff;
 }
@@ -87,7 +77,6 @@ body{
   opacity:.9;
 }
 
-/* ===== CARD ===== */
 .card-box{
   background:#fff;
   border-radius:22px;
@@ -95,7 +84,6 @@ body{
   box-shadow:0 10px 26px rgba(0,0,0,.1);
 }
 
-/* ===== SELETOR ===== */
 .select-btn{
   padding:18px;
   border-radius:16px;
@@ -106,7 +94,6 @@ body{
   font-weight:600;
 }
 
-/* ===== BOTÕES ===== */
 .primary{
   background:linear-gradient(180deg,var(--gold-soft),var(--gold));
   border:none;
@@ -131,7 +118,6 @@ body{
   cursor:pointer;
 }
 
-/* ===== MODAL ===== */
 .modal{
   position:fixed;
   inset:0;
@@ -157,26 +143,22 @@ body{
 <div class="page">
   <div class="box">
 
-    <!-- HEADER -->
     <div class="header">
       <h1>DESTINO</h1>
       <div class="stars">★★★★★</div>
       <p>Selecione o destino da corrida</p>
     </div>
 
-    <!-- DESTINO -->
     <div class="card-box">
       <div class="select-btn" id="destinoBtn">
         Toque para escolher o destino
       </div>
     </div>
 
-    <!-- CONTINUAR -->
     <button class="primary" id="btnContinuar" disabled>
       Continuar
     </button>
 
-    <!-- AÇÕES -->
     <button class="secondary" id="btnVoltar">⬅ Voltar</button>
     <button class="secondary" id="btnInicio">🏠 Início</button>
 
@@ -195,93 +177,102 @@ body{
   </div>
 </div>
 
-<script src="core/global.js"></script>
-<script src="core/datamanager.js"></script>
+<!-- ================= ORDEM OBRIGATÓRIA ================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./core/supabase.js"></script>
+<script src="./core/global.js"></script>
+<script src="./core/datamanager.js"></script>
 
 <script>
-/* ================= PROTEÇÃO DE ACESSO ================= */
+/* ================= PROTEÇÃO DE SESSÃO ================= */
+(async () => {
+  await App.requireAuth(["passageiro"]);
+})();
 
-const usuario = JSON.parse(localStorage.getItem("usuarioRF"));
-
-if(!usuario){
-  window.location.href = "index.html";
+/* ================= VALIDA ORIGEM ================= */
+const origem = App.getState("origem");
+if (!origem) {
+  App.go("dashboard-passageiro.html");
 }
 
-const origem = App.get("origem");
-if(!origem){
-  if(usuario.tipo === "motorista"){
-    window.location.href = "dashboard-motorista.html";
-  }else{
-    window.location.href = "dashboard-passageiro.html";
-  }
-}
-
-/* ================= BOTÕES ================= */
-
-document.getElementById("btnVoltar").onclick = () => {
-  App.go("origem.html");
-};
-
-document.getElementById("btnInicio").onclick = () => {
-  if(usuario.tipo === "motorista"){
-    window.location.href = "dashboard-motorista.html";
-  }else{
-    window.location.href = "dashboard-passageiro.html";
-  }
-};
-
-/* ================= LÓGICA DESTINO ================= */
-
+/* ================= ELEMENTOS ================= */
 const destinoBtn = document.getElementById("destinoBtn");
 const modal = document.getElementById("modal");
 const lista = document.getElementById("lista");
 const busca = document.getElementById("busca");
-const btn = document.getElementById("btnContinuar");
+const btnContinuar = document.getElementById("btnContinuar");
+const btnVoltar = document.getElementById("btnVoltar");
+const btnInicio = document.getElementById("btnInicio");
 
+/* ================= BOTÕES ================= */
+btnVoltar.onclick = () => App.go("origem.html");
+btnInicio.onclick = () => App.go("dashboard-passageiro.html");
+
+/* ================= DADOS ================= */
 let destinos = [];
 
+/* ================= MODAL ================= */
 destinoBtn.onclick = () => {
   modal.style.display = "flex";
   busca.value = "";
-  render(destinos);
+  renderLista(destinos);
   setTimeout(() => busca.focus(), 100);
 };
 
 modal.onclick = e => {
-  if(e.target === modal) modal.style.display = "none";
+  if (e.target === modal) modal.style.display = "none";
 };
 
-async function carregar(){
+/* ================= CARREGAR DESTINOS ================= */
+async function carregar() {
   await DataManager.carregar();
   destinos = DataManager.listarDestinos(origem);
+
+  const destinoSalvo = App.getState("destino");
+  if (destinoSalvo) {
+    destinoBtn.textContent = destinoSalvo;
+    btnContinuar.disabled = false;
+  }
 }
 
-function render(arr){
+/* ================= RENDER ================= */
+function renderLista(arr) {
   lista.innerHTML = "";
-  arr.forEach(d => {
-    const valor = DataManager.buscarValor(origem, d);
-    const div = document.createElement("div");
-    div.textContent = d;
-    div.style.padding = "14px";
-    div.style.cursor = "pointer";
-    div.onclick = () => {
-      destinoBtn.textContent = d;
-      App.set("destino", d);
-      App.set("valorBase", valor);
+
+  arr.forEach(destino => {
+    const valor = DataManager.buscarValor(origem, destino);
+    const item = document.createElement("div");
+
+    item.textContent = destino;
+    item.style.padding = "14px";
+    item.style.cursor = "pointer";
+
+    item.onclick = () => {
+      destinoBtn.textContent = destino;
+      App.setState("destino", destino);
+      App.setState("valorBase", valor);
       modal.style.display = "none";
-      btn.disabled = false;
+      btnContinuar.disabled = false;
     };
-    lista.appendChild(div);
+
+    lista.appendChild(item);
   });
 }
 
+/* ================= BUSCA ================= */
 busca.oninput = () => {
-  const t = busca.value.toLowerCase();
-  render(destinos.filter(d => d.toLowerCase().includes(t)));
+  const termo = busca.value.toLowerCase();
+  renderLista(
+    destinos.filter(d => d.toLowerCase().includes(termo))
+  );
 };
 
-btn.onclick = () => App.go("resumo.html");
+/* ================= CONTINUAR ================= */
+btnContinuar.onclick = () => {
+  App.go("resumo.html");
+};
 
+/* ================= INIT ================= */
 carregar();
 </script>
 
